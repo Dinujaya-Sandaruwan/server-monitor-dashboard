@@ -1,12 +1,140 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Server Dashboard</title>
+    <title>Server Monitor | VPS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .chart-container { position: relative; height: 200px; width: 100%; }
+    </style>
 </head>
-<body>
-    <h1>Server Monitoring Dashboard</h1>
-    <p>Welcome, {{ username }}!</p>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <nav class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <div class="bg-blue-600 p-2 rounded-lg">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            </div>
+            <h1 class="text-xl font-bold tracking-tight">Server Dashboard</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+            <span class="text-sm text-gray-400">User: <span class="text-gray-200 font-medium">{{ username }}</span></span>
+            <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse" id="status-indicator"></div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-6 space-y-6">
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- CPU Card -->
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="text-gray-400 text-sm font-medium">CPU Usage</h3>
+                    <span class="text-blue-500 bg-blue-500/10 px-2 py-1 rounded text-xs" id="cpu-count">-- Cores</span>
+                </div>
+                <div class="flex items-end space-x-2">
+                    <span class="text-3xl font-bold" id="cpu-percent">0%</span>
+                    <span class="text-gray-500 text-sm mb-1" id="cpu-freq">-- MHz</span>
+                </div>
+                <div class="w-full bg-gray-700 h-1.5 mt-4 rounded-full overflow-hidden">
+                    <div id="cpu-bar" class="bg-blue-500 h-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- RAM Card -->
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="text-gray-400 text-sm font-medium">RAM Usage</h3>
+                    <span class="text-purple-500 bg-purple-500/10 px-2 py-1 rounded text-xs" id="ram-total">-- GB</span>
+                </div>
+                <div class="flex items-end space-x-2">
+                    <span class="text-3xl font-bold" id="ram-percent">0%</span>
+                    <span class="text-gray-500 text-sm mb-1" id="ram-used">-- GB used</span>
+                </div>
+                <div class="w-full bg-gray-700 h-1.5 mt-4 rounded-full overflow-hidden">
+                    <div id="ram-bar" class="bg-purple-500 h-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Disk Card -->
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="text-gray-400 text-sm font-medium">Disk Usage (/)</h3>
+                    <span class="text-green-500 bg-green-500/10 px-2 py-1 rounded text-xs" id="disk-total">-- GB</span>
+                </div>
+                <div class="flex items-end space-x-2">
+                    <span class="text-3xl font-bold" id="disk-percent">0%</span>
+                    <span class="text-gray-500 text-sm mb-1" id="disk-used">-- GB used</span>
+                </div>
+                <div class="w-full bg-gray-700 h-1.5 mt-4 rounded-full overflow-hidden">
+                    <div id="disk-bar" class="bg-green-500 h-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Swap Card -->
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="text-gray-400 text-sm font-medium">Swap Usage</h3>
+                    <span class="text-orange-500 bg-orange-500/10 px-2 py-1 rounded text-xs" id="swap-total">-- GB</span>
+                </div>
+                <div class="flex items-end space-x-2">
+                    <span class="text-3xl font-bold" id="swap-percent">0%</span>
+                    <span class="text-gray-500 text-sm mb-1" id="swap-used">-- GB used</span>
+                </div>
+                <div class="w-full bg-gray-700 h-1.5 mt-4 rounded-full overflow-hidden">
+                    <div id="swap-bar" class="bg-orange-500 h-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                <h3 class="text-lg font-semibold mb-6">CPU History (%)</h3>
+                <div class="chart-container">
+                    <canvas id="cpuChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                <h3 class="text-lg font-semibold mb-6">RAM History (%)</h3>
+                <div class="chart-container">
+                    <canvas id="ramChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Processes Table -->
+        <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-700 flex justify-between items-center">
+                <h3 class="text-lg font-semibold">Top Processes</h3>
+                <span class="text-xs text-gray-500">Sorted by CPU Usage</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-gray-800/50 text-gray-400 font-medium">
+                        <tr>
+                            <th class="px-6 py-3">PID</th>
+                            <th class="px-6 py-3">Name</th>
+                            <th class="px-6 py-3">User</th>
+                            <th class="px-6 py-3 text-right">CPU %</th>
+                            <th class="px-6 py-3 text-right">MEM %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="process-table-body" class="divide-y divide-gray-700">
+                        <!-- Rows will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer class="text-center py-8 text-gray-500 text-xs">
+        &copy; 2026 Server Monitoring Dashboard • Powered by FastAPI & psutil
+    </footer>
+
+    <script src="/static/js/app.js"></script>
 </body>
 </html>
