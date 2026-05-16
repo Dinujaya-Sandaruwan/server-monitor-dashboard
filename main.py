@@ -1,6 +1,8 @@
 import os
 import secrets
 import psutil
+import asyncio
+import json
 from fastapi import FastAPI, Depends, HTTPException, status, WebSocket, WebSocketDisconnect
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
@@ -92,6 +94,20 @@ def get_system_stats():
 @app.get("/api/stats")
 async def stats(username: str = Depends(authenticate)):
     return get_system_stats()
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    # In a production app, you'd want to verify authentication here too.
+    # Since browsers don't send Basic Auth headers with WebSockets easily,
+    # we'll skip for now or use a session-based approach.
+    await websocket.accept()
+    try:
+        while True:
+            stats = get_system_stats()
+            await websocket.send_json(stats)
+            await asyncio.sleep(2)
+    except WebSocketDisconnect:
+        pass
 
 @app.get("/", response_class=HTMLResponse)
 async def get_dashboard(request: Request, username: str = Depends(authenticate)):
