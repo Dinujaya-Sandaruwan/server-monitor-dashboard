@@ -1,5 +1,6 @@
 import os
 import secrets
+import psutil
 from fastapi import FastAPI, Depends, HTTPException, status, WebSocket, WebSocketDisconnect
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
@@ -38,6 +39,59 @@ def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
 # Static files and Templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+def get_system_stats():
+    # CPU usage per core and total
+    cpu_percent = psutil.cpu_percent(interval=None)
+    cpu_count = psutil.cpu_count()
+    cpu_freq = psutil.cpu_freq()
+    
+    memory = psutil.virtual_memory()
+    swap = psutil.swap_memory()
+    disk = psutil.disk_usage('/')
+    
+    # Top processes
+    processes = []
+    for proc in psutil.process_iter(['pid', 'name', 'username', 'cpu_percent', 'memory_percent']):
+        try:
+            # We call cpu_percent twice to get a meaningful value for the process
+            # but that's slow. For real-time, we'll just take what's there.
+            processes.append(proc.info)
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+    
+    # Sort by CPU usage and take top 10
+    processes = sorted(processes, key=lambda x: x['cpu_percent'], reverse=True)[:10]
+    
+    return {
+        "cpu": {
+            "percent": cpu_percent,
+            "count": cpu_count,
+            "freq": cpu_freq.current if cpu_freq else 0
+        },
+        "memory": {
+            "total": memory.total,
+            "available": memory.available,
+            "percent": memory.percent,
+            "used": memory.used
+        },
+        "swap": {
+            "total": swap.total,
+            "used": swap.used,
+            "percent": swap.percent
+        },
+        "disk": {
+            "total": disk.total,
+            "used": disk.used,
+            "free": disk.free,
+            "percent": disk.percent
+        },
+        "processes": processes
+    }
+
+@app.get("/api/stats")
+async def stats(username: str = Depends(authenticate)):
+    return get_system_stats()
 
 @app.get("/", response_class=HTMLResponse)
 async def get_dashboard(request: Request, username: str = Depends(authenticate)):
