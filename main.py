@@ -17,7 +17,7 @@ security = HTTPBasic()
 
 # Update these with your preferred credentials
 DASHBOARD_USERNAME = "admin"
-DASHBOARD_PASSWORD = "password"
+DASHBOARD_PASSWORD = "colombo123"
 
 def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
     current_username_bytes = credentials.username.encode("utf8")
