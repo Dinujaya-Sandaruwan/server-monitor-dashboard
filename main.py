@@ -111,7 +111,9 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.get("/", response_class=HTMLResponse)
 async def get_dashboard(request: Request, username: str = Depends(authenticate)):
-    return templates.TemplateResponse("index.html", {"request": request, "username": username})
+    return templates.TemplateResponse(
+        request=request, name="index.html", context={"username": username}
+    )
 
 if __name__ == "__main__":
     import uvicorn
