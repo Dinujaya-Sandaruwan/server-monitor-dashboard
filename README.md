@@ -29,7 +29,7 @@ pip install -r requirements.txt
 ### 3. Start with PM2
 Run the following command to start the dashboard and ensure it stays running:
 ```bash
-pm2 start uvicorn --name "server-dashboard" --interpreter python3 -- main:app --host 0.0.0.0 --port 5100
+pm2 start /root/.pyenv/versions/3.10.12/envs/serverMonitor/bin/uvicorn --name "server-dashboard" -- main:app --host 0.0.0.0 --port 5100
 ```
 
 ### 4. PM2 Management Commands
