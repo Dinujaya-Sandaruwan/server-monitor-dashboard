@@ -12,20 +12,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Deploy via SFTP
-        uses: milesj/sftp-deploy-action@v1.5.0
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USERNAME }}
-          password: ${{ secrets.SERVER_PASSWORD }}
-          port: 22
-          local_path: './'
-          remote_path: '/server-monitor/'
-          filters: |
-            .git*
-            .github
-            venv
-            __pycache__
+      - name: Deploy via SFTP (lftp)
+        run: |
+          sudo apt-get update && sudo apt-get install -y lftp
+          lftp -e "
+            set sftp:auto-confirm yes;
+            open sftp://${{ secrets.SERVER_HOST }}:22;
+            user ${{ secrets.SERVER_USERNAME }} ${{ secrets.SERVER_PASSWORD }};
+            mirror -R \
+              -X .git* \
+              -X .github* \
+              -X venv* \
+              -X __pycache__* \
+              ./ /server-monitor/;
+            quit;
+          "
 
       - name: Restart PM2
         uses: appleboy/ssh-action@v0.1.10
@@ -36,5 +37,7 @@ jobs:
           script: |
             cd /opt/server-monitor
             # Install any new dependencies
-            pip install -r requirements.txt
+            # We use the full path to the virtualenv's pip if possible
+            # But since we're root, we'll assume the environment is active or we use the local one
+            /root/.pyenv/versions/3.10.12/envs/serverMonitor/bin/pip install -r requirements.txt
             pm2 restart server-dashboard
