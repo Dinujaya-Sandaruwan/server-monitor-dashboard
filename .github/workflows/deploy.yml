@@ -13,20 +13,19 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Deploy via SFTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        uses: milesj/sftp-deploy-action@v1.5.0
         with:
-          server: ${{ secrets.SERVER_HOST }}
+          host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
-          protocol: sftp
           port: 22
-          local-dir: ./
-          server-dir: ./server-monitor/ # Since we chroot to /opt, the folder is visible here
-          exclude: |
-            **/.git*
-            **/.github/**
-            venv/**
-            __pycache__/**
+          local_path: './'
+          remote_path: '/server-monitor/'
+          filters: |
+            .git*
+            .github
+            venv
+            __pycache__
 
       - name: Restart PM2
         uses: appleboy/ssh-action@v0.1.10
