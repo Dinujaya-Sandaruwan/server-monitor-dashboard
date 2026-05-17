@@ -11,7 +11,7 @@ A modern, lightweight, real-time web dashboard to monitor your Ubuntu VPS.
 ## Local Development
 1. Install dependencies: `pip install -r requirements.txt`
 2. Run the server: `python main.py`
-3. Access at: `http://localhost:5000` (User: `admin`, Pass: `password`)
+3. Access at: `http://localhost:5100` (User: `admin`, Pass: `colombo123`)
 
 ## Deployment on VPS using PM2
 
@@ -29,7 +29,7 @@ pip install -r requirements.txt
 ### 3. Start with PM2
 Run the following command to start the dashboard and ensure it stays running:
 ```bash
-pm2 start uvicorn --name "server-dashboard" --interpreter python3 -- main:app --host 0.0.0.0 --port 5000
+pm2 start uvicorn --name "server-dashboard" --interpreter python3 -- main:app --host 0.0.0.0 --port 5100
 ```
 
 ### 4. PM2 Management Commands
